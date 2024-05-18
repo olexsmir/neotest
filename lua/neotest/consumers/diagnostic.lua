@@ -55,6 +55,9 @@ local function init(client)
     logger.debug("Setting diagnostics for", self.file_path, diagnostics)
 
     vim.schedule(function()
+      if not vim.api.nvim_buf_is_valid(self.bufnr) then
+        return
+      end
       diag.set(diag_namespace, self.bufnr, diagnostics)
     end)
   end
@@ -98,9 +101,16 @@ local function init(client)
               local mark_code = api.nvim_buf_get_lines(bufnr, mark[1], mark[1] + 1, false)[1]
 
               if mark_code == self.error_code_lines[pos_id][error_i] then
+                local col = mark_code:find("%S")
+                if col then
+                  col = col - 1
+                else
+                  col = 0
+                end
+
                 diagnostics[#diagnostics + 1] = {
                   lnum = mark[1],
-                  col = mark_code:find("%S") - 1,
+                  col = col,
                   message = error.message,
                   source = "neotest",
                   severity = config.diagnostic.severity,
